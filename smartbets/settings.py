@@ -34,7 +34,9 @@ SECRET_KEY = 'django-insecure-!hl(q#99dm2x9tq61pj**mc)0h(4d^m5gkf6q#(k^cy@_vh@rs
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'https://smartbet-backend-mgqo.onrender.com'
+]
 
 
 # Application definition
