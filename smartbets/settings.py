@@ -34,7 +34,11 @@ SECRET_KEY = 'django-insecure-!hl(q#99dm2x9tq61pj**mc)0h(4d^m5gkf6q#(k^cy@_vh@rs
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'smartbet-backend-mgqo.onrender.com', 
+    'localhost', 
+    '127.0.0.1'
+]
 
 
 # Application definition
@@ -66,7 +70,6 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'smartbets.urls'
 
 CORS_ALLOWED_ORIGINS = [
-    "https://smartbet-backend-mgqo.onrender.com",
     "http://localhost:3000", 
     "http://localhost:5173",
     "http://127.0.0.1:3000",
