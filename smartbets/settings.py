@@ -35,7 +35,7 @@ SECRET_KEY = 'django-insecure-!hl(q#99dm2x9tq61pj**mc)0h(4d^m5gkf6q#(k^cy@_vh@rs
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'smartbet-backend-mgqo.onrender.com', 
+    https://smartbetspro.netlify.app/, 
 ]
 
 
