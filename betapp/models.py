@@ -16,9 +16,13 @@ class Game(models.Model):
     is_premium = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-    # Professional Odds & Stake
-    odds = models.DecimalField(max_digits=5, decimal_places=2, help_text="e.g. 1.85")
-    bookmaker = models.CharField(max_length=50, blank=True, help_text="e.g. Bet365, 1xBet")
+    # # Professional Odds & Stake
+    # odds = models.DecimalField(max_digits=5, decimal_places=2, help_text="e.g. 1.85")
+    # bookmaker = models.CharField(max_length=50, blank=True, help_text="e.g. Bet365, 1xBet")
+    # Change these lines in your Game model:
+    odds = models.DecimalField(max_digits=5, decimal_places=2, default=1.00) # Added default
+    predicted_outcome = models.CharField(max_length=10, choices=PREDICTION_CHOICES, default='1') # Added default
+
     
     # Logic Fields
     predicted_outcome = models.CharField(max_length=10, choices=PREDICTION_CHOICES)
