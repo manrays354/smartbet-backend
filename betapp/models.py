@@ -1,13 +1,14 @@
 from django.db import models
-
-from django.db import models
 from django.core.exceptions import ValidationError
 
 class Game(models.Model):
-    # Same Market Choices as before...
     PREDICTION_CHOICES = [
-        ('1', 'Home Win (1)'), ('X', 'Draw (X)'), ('2', 'Away Win (2)'),
-        ('OV25', 'Over 2.5'), ('UN25', 'Under 2.5'), ('BTTS', 'Both Teams Score'),
+        ('1', 'Home Win (1)'), 
+        ('X', 'Draw (X)'), 
+        ('2', 'Away Win (2)'),
+        ('OV25', 'Over 2.5'), 
+        ('UN25', 'Under 2.5'), 
+        ('BTTS', 'Both Teams Score'),
     ]
 
     title = models.CharField(max_length=200)
@@ -24,6 +25,10 @@ class Game(models.Model):
     home_score = models.PositiveIntegerField(null=True, blank=True)
     away_score = models.PositiveIntegerField(null=True, blank=True)
     is_finished = models.BooleanField(default=False)
+    
+    # These fields now have defaults to prevent the Render EOFError
+    description_tag = models.CharField(max_length=100, default="") 
+    game_priority = models.IntegerField(default=0)
 
     # Conditional Analysis Fields
     free_summary = models.TextField(null=True, blank=True)
@@ -31,30 +36,32 @@ class Game(models.Model):
 
     @property
     def net_profit(self):
-        """Calculates profit based on 1 unit stake (Standard Pro Metric)"""
+        """Calculates profit based on 1 unit stake"""
         if not self.is_finished or not self.is_won:
             return -1.00 # Lost stake
         return float(self.odds) - 1
 
     @property
     def is_won(self):
-        if not self.is_finished or self.home_score is None:
+        if not self.is_finished or self.home_score is None or self.away_score is None:
             return False
         
-        # Simple 1X2 Logic (Expand this for BTTS/Over-Under as needed)
+        # 1X2 Logic
         actual = 'X'
-        if self.home_score > self.away_score: actual = '1'
-        elif self.away_score > self.home_score: actual = '2'
+        if self.home_score > self.away_score: 
+            actual = '1'
+        elif self.away_score > self.home_score: 
+            actual = '2'
         
+        # Basic check for 1X2. Note: Over/Under/BTTS will need expanded logic here later.
         return self.predicted_outcome == actual
 
     def clean(self):
-        """Enforce your Free/Premium logic"""
+        """Enforce Free/Premium logic"""
         if self.is_premium and not self.premium_analysis:
             raise ValidationError({'premium_analysis': "Required for Premium games."})
         if not self.is_premium and not self.free_summary:
             raise ValidationError({'free_summary': "Required for Free games."})
-
 
     def __str__(self):
         return self.title
