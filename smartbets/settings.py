@@ -15,11 +15,14 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+# SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
 PAYHERO_API_USERNAME = os.getenv('PAYHERO_API_USERNAME')
 PAYHERO_API_PASSWORD = os.getenv('PAYHERO_API_PASSWORD')
 PAYHERO_CHANEL_ID = os.getenv('PAYHERO_CHANNEL_ID')
+DATABASE_URL = os.getenv('DATABASE_URL')
+SECRET_KEY = os.getenv('SECRET_KEY')
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,7 +38,7 @@ SECRET_KEY = 'django-insecure-!hl(q#99dm2x9tq61pj**mc)0h(4d^m5gkf6q#(k^cy@_vh@rs
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'smartbet-backend-mgqo.onrender.com'
+    'https://smartbet-backend-mgqo.onrender.com'
 ]
 
 
