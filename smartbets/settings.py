@@ -71,7 +71,10 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'smartbets.urls'
 
 CORS_ALLOWED_ORIGINS = [
-    "https://smartbetstips.netlify.app", 
+    
+    "https://smartbetstips.netlify.app",
+    "https://smartbetstips.netlify.app/pay", 
+    "https://smartbetstips.netlify.app/payhero_callback", 
 ]
 
 TEMPLATES = [
