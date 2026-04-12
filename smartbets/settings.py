@@ -71,7 +71,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'smartbets.urls'
 
 CORS_ALLOWED_ORIGINS = [
-    "smartbetstips.netlify.app", 
+    "https://smartbetstips.netlify.app", 
 ]
 
 TEMPLATES = [
