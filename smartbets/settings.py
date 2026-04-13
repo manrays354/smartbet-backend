@@ -39,6 +39,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'smartbet-backend-mgqo.onrender.com'
+    
 ]
 
 
@@ -73,6 +74,7 @@ ROOT_URLCONF = 'smartbets.urls'
 CORS_ALLOWED_ORIGINS = [
     
     "https://smartbetstips.netlify.app",
+    "https://smartbet-backend-mgqo.onrender.com/api/initiate_payment/",
 ]
 
 TEMPLATES = [
