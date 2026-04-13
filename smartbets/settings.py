@@ -39,8 +39,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'smartbet-backend-mgqo.onrender.com'
-    "smartbet-backend-mgqo.onrender.com/api/initiate_payment/"
-    
 ]
 
 
