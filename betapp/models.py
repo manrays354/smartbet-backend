@@ -11,64 +11,72 @@ class Game(models.Model):
         ('BTTS', 'Both Teams Score'),
     ]
 
+    # Basic Info
     title = models.CharField(max_length=200)
     match_date = models.DateTimeField()
     is_premium = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-    # # Professional Odds & Stake
-    # odds = models.DecimalField(max_digits=5, decimal_places=2, help_text="e.g. 1.85")
-    # bookmaker = models.CharField(max_length=50, blank=True, help_text="e.g. Bet365, 1xBet")
-    # Change these lines in your Game model:
-    odds = models.DecimalField(max_digits=5, decimal_places=2, default=1.00) # Added default
-    predicted_outcome = models.CharField(max_length=10, choices=PREDICTION_CHOICES, default='1') # Added default
+    # Professional Odds & Prediction
+    odds = models.DecimalField(max_digits=5, decimal_places=2, default=1.00, help_text="e.g. 1.85")
+    predicted_outcome = models.CharField(max_length=10, choices=PREDICTION_CHOICES, default='1')
+    bookmaker = models.CharField(max_length=50, blank=True, default="Various", help_text="e.g. Bet365, 1xBet")
 
-    
-    # Logic Fields
-    predicted_outcome = models.CharField(max_length=10, choices=PREDICTION_CHOICES)
+    # Match Results
     home_score = models.PositiveIntegerField(null=True, blank=True)
     away_score = models.PositiveIntegerField(null=True, blank=True)
     is_finished = models.BooleanField(default=False)
     
-    # These fields now have defaults to prevent the Render EOFError
-    description_tag = models.CharField(max_length=100, default="") 
+    # Metadata
+    description_tag = models.CharField(max_length=100, default="", blank=True) 
     game_priority = models.IntegerField(default=0)
 
-    # Conditional Analysis Fields
+    # Analysis Fields
     free_summary = models.TextField(null=True, blank=True)
     premium_analysis = models.TextField(null=True, blank=True)
 
     @property
     def net_profit(self):
         """Calculates profit based on 1 unit stake"""
-        if not self.is_finished or not self.is_won:
-            return -1.00 # Lost stake
+        if not self.is_finished:
+            return 0.00
+        if not self.is_won:
+            return -1.00  # Lost the 1 unit stake
         return float(self.odds) - 1
 
     @property
     def is_won(self):
+        """Logic to determine if the prediction was correct"""
         if not self.is_finished or self.home_score is None or self.away_score is None:
             return False
         
         # 1X2 Logic
-        actual = 'X'
+        actual_1x2 = 'X'
         if self.home_score > self.away_score: 
-            actual = '1'
+            actual_1x2 = '1'
         elif self.away_score > self.home_score: 
-            actual = '2'
+            actual_1x2 = '2'
         
-        # Basic check for 1X2. Note: Over/Under/BTTS will need expanded logic here later.
-        return self.predicted_outcome == actual
+        # Check against predicted_outcome (expand this for OV25/BTTS as needed)
+        if self.predicted_outcome in ['1', 'X', '2']:
+            return self.predicted_outcome == actual_1x2
+            
+        # Example for Over 2.5 logic
+        if self.predicted_outcome == 'OV25':
+            return (self.home_score + self.away_score) > 2.5
+            
+        return False
 
     def clean(self):
-        """Enforce Free/Premium logic"""
+        """Enforce Free/Premium validation logic"""
         if self.is_premium and not self.premium_analysis:
             raise ValidationError({'premium_analysis': "Required for Premium games."})
         if not self.is_premium and not self.free_summary:
             raise ValidationError({'free_summary': "Required for Free games."})
 
     def __str__(self):
-        return self.title
+        return f"{self.title} ({self.match_date.strftime('%Y-%m-%d')})"
+
 
 class Payment(models.Model):
     phone_number = models.CharField(max_length=15)
@@ -79,4 +87,4 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.phone_number} - {self.status}"
+        return f"{self.phone_number} - {self.status} - {self.created_at.date()}"
