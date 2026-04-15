@@ -33,47 +33,31 @@ def get_games_api(request):
 
 @api_view(['POST'])
 def initiate_payment(request):
-    phone = request.data.get('phone')
-    if not phone:
-        return Response({"error": "Phone number is required"}, status=400)
+    raw_phone = request.data.get('phone', '')
     
-    # Format phone to 254...
-    if phone.startswith('0'): phone = '254' + phone[1:]
-    
-    amount = 200
-    # Unique reference: PRO-PhoneLast4-Timestamp
-    external_ref = f"PRO-{phone[-4:]}-{int(date.today().strftime('%y%m%d%H%M'))}"
-    
-    Payment.objects.create(
-        external_reference=external_ref,
-        phone_number=phone,
-        amount=amount,
-        status='PENDING'
-    )
-    
-    # PayHero V2 API credentials from settings.py
+    # Force the number into the exact 254... format before sending to PayHero
+    # This removes any leading 0 or + and ensures it starts with 254
+    clean_phone = raw_phone.strip().replace('+', '')
+    if clean_phone.startswith('0'):
+        clean_phone = '254' + clean_phone[1:]
+    elif not clean_phone.startswith('254'):
+        clean_phone = '254' + clean_phone
+
+    # Final validation: Ensure it's exactly 12 digits (254 + 9 digits)
+    if len(clean_phone) != 12:
+        return Response({"error": "Invalid Kenya phone format. Use 2547XXXXXXXX"}, status=400)
+
+    # Use the official PayHero v1 or v2 endpoint
     api_url = 'https://payhero.co.ke'
-    auth_str = f"{settings.PAYHERO_API_USERNAME}:{settings.PAYHERO_API_PASSWORD}"
-    b64_auth = base64.b64encode(auth_str.encode()).decode()
     
     payload = {
-        "amount": amount,
-        "phone_number": phone,
+        "amount": 200,
+        "phone_number": clean_phone, # Use the cleaned version here
         "channel_id": settings.PAYHERO_CHANNEL_ID,
-        "external_reference": external_ref,
-        "callback_url": "https://smartbet-backend-mgqo.onrender.com" 
+        "provider": "m-pesa", # PayHero often requires the provider field
+        "external_reference": f"PRO-{clean_phone[-4:]}-{int(time.time())}",
+        "callback_url": "https://onrender.com"
     }
-    
-    headers = {'Authorization': f'Basic {b64_auth}', 'Content-Type': 'application/json'}
-    
-    try:
-        response = requests.post(api_url, json=payload, headers=headers)
-        res_data = response.json()
-        if response.status_code in [200, 201] and res_data.get('success'):
-            return Response({"message": "STK Push Sent", "reference": external_ref}, status=200)
-        return Response({"error": res_data.get('status', 'Provider error')}, status=400)
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
 
 @csrf_exempt
 def payhero_callback(request):
