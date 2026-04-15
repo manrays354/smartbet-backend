@@ -10,20 +10,17 @@ from .serializers import GameSerializer
 
 @api_view(['GET'])
 def get_games_api(request):
-    """
-    Returns games and checks if the current user has paid today 
-    based on their phone number (sent as a query param).
-    """
     phone = request.GET.get('phone')
-    today_str = date.today().strftime('%Y-%m-%d')
-    
-    # Check if this phone number has a SUCCESSFUL payment for today
+    # Check if a successful payment exists for this phone today
     has_paid = False
     if phone:
+        # Standardize phone format if needed
+        if phone.startswith('0'): phone = '254' + phone[1:]
+        
         has_paid = Payment.objects.filter(
             phone_number=phone,
             status='SUCCESS',
-            created_at__date=date.today() # Requires a 'created_at' field in model
+            created_at__date=date.today()
         ).exists()
 
     games = Game.objects.all().order_by('-match_date')
@@ -36,56 +33,63 @@ def get_games_api(request):
 
 @api_view(['POST'])
 def initiate_payment(request):
-    """Handles STK Push via PayHero API"""
     phone = request.data.get('phone')
-    amount = 200
-    external_ref = f"PRO-{date.today().strftime('%y%m%d')}-{phone}"
+    if not phone:
+        return Response({"error": "Phone number is required"}, status=400)
     
-    # 1. Create Local Pending Record
-    payment, created = Payment.objects.get_or_create(
+    # Format phone to 254...
+    if phone.startswith('0'): phone = '254' + phone[1:]
+    
+    amount = 200
+    # Unique reference: PRO-PhoneLast4-Timestamp
+    external_ref = f"PRO-{phone[-4:]}-{int(date.today().strftime('%y%m%d%H%M'))}"
+    
+    Payment.objects.create(
         external_reference=external_ref,
-        defaults={'phone_number': phone, 'amount': amount, 'status': 'PENDING'}
+        phone_number=phone,
+        amount=amount,
+        status='PENDING'
     )
     
-    # 2. PayHero API Setup
-    api_url = 'https://payhero.co.ke' # Ensure this is the correct endpoint
+    # PayHero V2 API credentials from settings.py
+    api_url = 'https://payhero.co.ke'
     auth_str = f"{settings.PAYHERO_API_USERNAME}:{settings.PAYHERO_API_PASSWORD}"
     b64_auth = base64.b64encode(auth_str.encode()).decode()
     
     payload = {
-        "channel_id": settings.PAYHERO_CHANNEL_ID,
         "amount": amount,
         "phone_number": phone,
+        "channel_id": settings.PAYHERO_CHANNEL_ID,
         "external_reference": external_ref,
-        "callback_url": request.build_absolute_uri('/payment-callback/')
+        "callback_url": "https://onrender.com" 
     }
     
     headers = {'Authorization': f'Basic {b64_auth}', 'Content-Type': 'application/json'}
     
     try:
         response = requests.post(api_url, json=payload, headers=headers)
-        if response.status_code in [200, 201]:
-            return Response({"message": "STK Push Sent", "status": "pending"}, status=200)
-        return Response({"error": "Provider error"}, status=400)
+        res_data = response.json()
+        if response.status_code in [200, 201] and res_data.get('success'):
+            return Response({"message": "STK Push Sent", "reference": external_ref}, status=200)
+        return Response({"error": res_data.get('status', 'Provider error')}, status=400)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
 @csrf_exempt
 def payhero_callback(request):
-    """Updates payment status when PayHero confirms the transaction"""
+    """PayHero sends POST to this endpoint when payment is done"""
     if request.method == 'POST':
+        data = json.loads(request.body)
+        # PayHero sends 'external_reference' and 'status'
+        ext_ref = data.get('external_reference')
+        status = data.get('status') 
+
         try:
-            data = json.loads(request.body)
-            # PayHero status values: 'SUCCESS', 'FAILED', or 'QUEUED'
-            ext_ref = data.get('ExternalReference')
-            status = data.get('status') 
-
             payment = Payment.objects.get(external_reference=ext_ref)
-            payment.status = status
-            # If successful, you could log additional data like M-Pesa receipt
+            # PayHero status is usually "Success" or "Failed"
+            payment.status = 'SUCCESS' if status.lower() == 'success' else 'FAILED'
             payment.save()
-            return JsonResponse({'message': 'Status Updated'})
+            return JsonResponse({'message': 'Verified'})
         except Payment.DoesNotExist:
-            return JsonResponse({'error': 'Reference not found'}, status=404)
-    return JsonResponse({'error': 'Invalid request'}, status=400)
-
+            return JsonResponse({'error': 'Ref Not Found'}, status=404)
+    return JsonResponse({'error': 'Invalid'}, status=400)
