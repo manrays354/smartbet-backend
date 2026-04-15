@@ -61,7 +61,7 @@ def initiate_payment(request):
         "phone_number": phone,
         "channel_id": settings.PAYHERO_CHANNEL_ID,
         "external_reference": external_ref,
-        "callback_url": "https://onrender.com" 
+        "callback_url": "https://smartbet-backend-mgqo.onrender.com" 
     }
     
     headers = {'Authorization': f'Basic {b64_auth}', 'Content-Type': 'application/json'}
