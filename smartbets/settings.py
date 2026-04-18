@@ -72,7 +72,7 @@ ROOT_URLCONF = 'smartbets.urls'
 
 CORS_ALLOWED_ORIGINS = [
     
-    "https://smartbetspro.vercel.app/",
+    "https://smartbetspro.vercel.app",
 ]
 
 TEMPLATES = [
