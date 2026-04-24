@@ -15,6 +15,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+BOT_SECRET_KEY = os.environ.get('BOT_SECRET_KEY')
+
 # SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
 PAYHERO_API_USERNAME = os.getenv('PAYHERO_API_USERNAME')
