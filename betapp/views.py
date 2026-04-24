@@ -1,3 +1,7 @@
+import os
+import threading
+from django.http import HttpResponse
+from django.core.management import call_command
 import json, base64, requests
 from datetime import date
 from django.conf import settings
@@ -7,6 +11,31 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Game, Payment
 from .serializers import GameSerializer
+
+try:
+    from rest_framework import viewsets, status
+    from rest_framework.decorators import action
+    from rest_framework.response import Response
+    from rest_framework.permissions import AllowAny
+except ImportError:
+    raise ImportError("Django Rest Framework is not installed. Run: pip install djangorestframework")
+
+
+
+class BotViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['get'], url_path='trigger')
+    def trigger(self, request):
+        token = request.query_params.get('token')
+        if token != os.environ.get('BOT_SECRET_KEY'):
+            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        def run_bot_task():
+            call_command('run_bot')
+
+        threading.Thread(target=run_bot_task).start()
+        return Response({"status": "Bot started"}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def get_games_api(request):
