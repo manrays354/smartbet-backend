@@ -16,6 +16,7 @@ class Game(models.Model):
     match_date = models.DateTimeField()
     is_premium = models.BooleanField(default=False)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    odds = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     # Professional Odds & Prediction
     odds = models.DecimalField(max_digits=5, decimal_places=2, default=1.00, help_text="e.g. 1.85")
